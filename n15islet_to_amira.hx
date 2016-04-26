@@ -1,19 +1,30 @@
 # Amira Project 600
 # Amira
 
-proc load_vrml {fname} {
-    # Loads a VRML file and converts it to the Amira Geometry Surface format.
-    #
+proc get_base {fname} {
+    # Returns the basename of an input VRML file.
+    #   
     # Input
     # -----
     # fname: File name of VRML file with .wrl extension
-    #
+    #   
     # Returns
     # -------
     # base: Basename of the file given by fname
-
+    
     set base [file tail $fname]
     set base [string trimright $base ".wrl"]
+    return $base
+}
+
+proc load_vrml {fname base} {
+    # Loads a VRML file and converts it to the Amira Geometry Surface format.
+    #   
+    # Input
+    # -----
+    # fname: File name of VRML file with .wrl extension
+    # base: Basename of the input VRML file
+
     [load $fname] setLabel $base
     set module [appendn $base "-Open-Inventor-To-Surface"]
     create HxGeometryToSurface $module
@@ -21,7 +32,6 @@ proc load_vrml {fname} {
     $module action snap
     $module fire
     "GeometrySurface" setLabel [appendn $base "-Geometry-Surface"]
-    return $base
     $module deselect
 }
 
@@ -101,6 +111,18 @@ proc create_surface_view {base surfTrans surfColor} {
     $module deselect
 }
 
+proc export_surface {module path_out} {
+    # Exports an Amira Geometry Surface module to an Amira Mesh binary file.
+    #
+    # Input
+    # -----
+    # module: Module name for the Geometry Surface
+    # path_out: Output path to store the .am file to
+     
+    set fnameout [appendn $module ".am"]
+    $module exportData "Amira Binary Surface" [file join $path_out $fnameout]
+}
+
 proc appendn {str_in args} {
     # Appends numerous input strings to one output string.
     #
@@ -138,10 +160,29 @@ proc isnan {x} {
     }   
 }
 
-proc process_cell {fname color trans} {
-    set base [load_vrml $fname]
-    remesh_surface $base 1
-    smooth_surface $base 10 0.6
+proc process_cell {fname color trans path_out} {
+
+    # Get basename of .wrl file.
+    set base [get_base $fname]
+
+    # Check if a previously saved .am file exists. If so, load this file
+    # directly and skip remeshing, smoothing, and exporting, and give it
+    # a *-Geometry-Surface.smooth label name.
+    #   
+    # If a previously saved .am file does not exist, run remeshing and
+    # smoothing, and then export the file to the binary .am format. This will
+    # save time when the project file is re-opened.
+    set amFile [glob -nocomplain [file join $path_out [appendn $base "*.am"]]]
+    if {[string length $amFile] != 0} {
+        [load $amFile] setLabel [appendn $base "-Geometry-Surface.smooth"] 
+    } else {
+        load_vrml $fname $base
+        remesh_surface $base 1
+        smooth_surface $base 10 0.6 
+        export_surface [appendn $base "-Geometry-Surface.smooth"] $path_out
+    }   
+
+    # Create surface view to display the smoothed surface.
     create_surface_view $base $trans $color
 }
 

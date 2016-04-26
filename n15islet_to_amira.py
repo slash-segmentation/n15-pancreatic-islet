@@ -100,7 +100,8 @@ if __name__ == "__main__":
             if name.startswith('alpha'):
                 print 'Type: Alpha cell'
                 fnamecell = preprocess_cell(obj, name, path_out_cells)
-                fid.write('process_cell "{0}" "1,0,1" 0.7\n'.format(fnamecell)) 
+                fid.write('process_cell "{0}" "{1},{2},{3}" 0.7\n'.format(
+                    fnamecell, obj.red, obj.green, obj.blue)) 
             elif name.startswith('young_alpha'):
                 print 'Type: Young Alpha cell'
             elif name.startswith('old_alpha'):

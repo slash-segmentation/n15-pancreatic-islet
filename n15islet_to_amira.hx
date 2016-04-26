@@ -147,4 +147,3 @@ proc process_cell {fname color trans} {
 #####
 ###
 
-process_cell "out/cells/alpha_4_pm.wrl" "1,0,1" 0.7

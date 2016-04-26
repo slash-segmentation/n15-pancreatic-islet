@@ -22,6 +22,7 @@ proc load_vrml {fname} {
     $module fire
     "GeometrySurface" setLabel [appendn $base "-Geometry-Surface"]
     return $base
+    $module deselect
 }
 
 proc remesh_surface {base nTriScaleFactor} {
@@ -51,6 +52,7 @@ proc remesh_surface {base nTriScaleFactor} {
     $module fire
     $module remesh snap
     $module fire
+    $module deselect
 }
 
 proc smooth_surface {base val1 val2} {
@@ -70,6 +72,7 @@ proc smooth_surface {base val1 val2} {
     $module parameters setValue 1 $val2
     $module action snap
     $module fire
+    $module deselect
 }
 
 proc create_surface_view {base surfTrans surfColor} {
@@ -94,7 +97,8 @@ proc create_surface_view {base surfTrans surfColor} {
     $module fire
     set surfColor [split $surfColor ","]
     $module colormap setDefaultColor [lindex $surfColor 0] [lindex $surfColor 1] [lindex $surfColor 2]
-    $module fire 
+    $module fire
+    $module deselect
 }
 
 proc appendn {str_in args} {

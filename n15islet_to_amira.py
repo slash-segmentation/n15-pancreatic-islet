@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import shutil
 import pyimod
 from optparse import OptionParser
 
@@ -34,7 +35,7 @@ def preprocess_cell(obj, name, path_out_cells):
     name = ' '.join(name)
     name = name.split()
     name = '_'.join(name)
-    fnameout = os.path.join(path_out_cells, name)
+    fnameout = os.path.join(path_out_cells, name + '.wrl')
 
     # Create a new ImodModel with just the object to be processed
     modtmp = pyimod.ImodModel(mod)
@@ -48,7 +49,8 @@ def preprocess_cell(obj, name, path_out_cells):
     modtmp = pyimod.utils.ImodCmd(modtmp, 'imodmesh -CTs -P 10')
 
     # Convert to VRML
-    pyimod.ImodExport(modtmp, fnameout + '.wrl')
+    pyimod.ImodExport(modtmp, fnameout)
+    return fnameout
 
 if __name__ == "__main__":
     global mod
@@ -68,7 +70,15 @@ if __name__ == "__main__":
         print 'MINX Trans: {0}'.format(mod.minx_ctrans)
     else:
         print 'WARNING: NO MINX DATA!'
-   
+  
+    # Make a copy of the Amira .hx file and open it in append mode
+    bnamemod = os.path.basename(os.path.split(file_mod)[1])
+    fnamehx = os.path.join(path_out, bnamemod + '.hx')
+    shutil.copyfile(os.path.join('n15-pancreatic-islet', 
+        'n15islet_to_amira.hx'), fnamehx)
+    print 'Amira project file initialized at: {0}'.format(fnamehx)
+    fid = open(fnamehx, 'a+')
+ 
     # Loop over all objects
     for iObj in range(mod.nObjects):
         obj = mod.Objects[iObj]
@@ -89,7 +99,8 @@ if __name__ == "__main__":
                 os.mkdir(path_out_cells)
             if name.startswith('alpha'):
                 print 'Type: Alpha cell'
-                preprocess_cell(obj, name, path_out_cells)
+                fnamecell = preprocess_cell(obj, name, path_out_cells)
+                fid.write('process_cell "{0}" "1,0,1" 0.7\n'.format(fnamecell)) 
             elif name.startswith('young_alpha'):
                 print 'Type: Young Alpha cell'
             elif name.startswith('old_alpha'):
@@ -113,3 +124,4 @@ if __name__ == "__main__":
             elif 'fibroblast' in name:
                 print 'Type: Fibroblast'
         print '\n'
+    fid.close()

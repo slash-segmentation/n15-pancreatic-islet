@@ -80,10 +80,13 @@ if __name__ == "__main__":
     fid = open(fnamehx, 'a+')
  
     # Loop over all objects
+    path_out_cells = os.path.join(path_out, 'cells')
+    fid.write('set path_out_cells "{0}"\n'.format(path_out_cells))
+
     for iObj in range(mod.nObjects):
         obj = mod.Objects[iObj]
         name = obj.name.lower()
-        path_out_cells = os.path.join(path_out, 'cells')
+
         print 'Object {0}'.format(iObj+1)
         print 'Name: {0}'.format(obj.name)
         print 'Color: {0}, {1}, {2}'.format(obj.red, obj.green, obj.blue)
@@ -100,14 +103,17 @@ if __name__ == "__main__":
             if name.startswith('alpha'):
                 print 'Type: Alpha cell'
                 fnamecell = preprocess_cell(obj, name, path_out_cells)
-                fid.write('process_cell "{0}" "{1},{2},{3}" 0.7\n'.format(
-                    fnamecell, obj.red, obj.green, obj.blue)) 
+                fid.write('process_cell "{0}" "{1},{2},{3}" 0.7 $path_out_cells\n'.format(
+                    fnamecell, obj.red, obj.green, obj.blue))
             elif name.startswith('young_alpha'):
                 print 'Type: Young Alpha cell'
             elif name.startswith('old_alpha'):
                 print 'Type: Old Alpha cell'
             elif name.startswith('beta'):
                 print 'Type: Beta cell'
+                fnamecell = preprocess_cell(obj, name, path_out_cells)
+                fid.write('process_cell "{0}" "{1},{2},{3}" 0.7 $path_out_cells\n'.format(
+                    fnamecell, obj.red, obj.green, obj.blue))
             elif name.startswith('young_beta'):
                 print 'Type: Young Beta cell'
             elif name.startswith('old_beta'):

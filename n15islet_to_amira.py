@@ -88,10 +88,48 @@ def process_cell(celltype, obj, path_out, fid):
         print 'Type: {0}'.format(celltype)
         name = obj.name.lower()
         fnamecell = preprocess_cell(obj, path_out)
-        fid.write('process_cell "{0}" "{1},{2},{3}" 0.7 $path_out_cells\n'.format(
+        fid.write('process_cell "{0}" "{1},{2},{3}" 0 $path_out_cells\n'.format(
             fnamecell, obj.red, obj.green, obj.blue))
     else:
         print 'WARNING: UNRECOGNIZED CELL TYPE. SKIPPING.'
+
+def process_vessel(obj, path_out, fid):
+    """
+    Processes a vessel object. First performs the same preprocessing done for
+    cells, and exports to the VRML format. Then writes a line to the Amira
+    project file (.hx) to process the vessel in Amira. Object color is read from
+    the IMOD object and supplied to Amira.
+
+    Inputs
+    ------
+    obj:      PyIMOD ImodObject instance for the given vessel.
+    path_out: Output path for storing vessel data and files.
+    fid:      File ID of the growing .hx file to be appended to.
+    """
+    print 'Type: Blood Vessel'
+    name = obj.name.lower()
+    fnamevessel = preprocess_cell(obj, path_out)
+    fid.write('process_vessel "{0}" "{1},{2},{3}" 0 $path_out_vessels\n'.format(
+        fnamevessel, obj.red, obj.green, obj.blue))
+
+def process_nerve(obj, path_out, fid):
+    """
+    Processes a nerve object. First performs the same preprocessing done for
+    cells, and exports to the VRML format. Then writes a line to the Amira
+    project file (.hx) to process the nerve in Amira. Object color is read from
+    the IMOD object and supplied to Amira.
+
+    Inputs
+    ------
+    obj:      PyIMOD ImodObject instance for the given vessel.
+    path_out: Output path for storing nerve data and files.
+    fid:      File ID of the growing .hx file to be appended to.
+    """ 
+    print 'Type: Nerve'
+    name = obj.name.lower()
+    fnamenerve = preprocess_cell(obj, path_out)
+    fid.write('process_nerve "{0}" "{1},{2},{3}" 0 $path_out_nerves\n'.format(
+        fnamenerve, obj.red, obj.green, obj.blue))
 
 if __name__ == "__main__":
     global mod
@@ -119,11 +157,16 @@ if __name__ == "__main__":
         'n15islet_to_amira.hx'), fnamehx)
     print 'Amira project file initialized at: {0}'.format(fnamehx)
     fid = open(fnamehx, 'a+')
- 
-    # Loop over all objects
-    path_out_cells = os.path.join(path_out, 'cells')
-    fid.write('set path_out_cells "{0}"\n'.format(path_out_cells))
 
+    # Append object-specific output paths to the Amira .hx file 
+    path_out_cells = os.path.join(path_out, 'cells')
+    path_out_vessels = os.path.join(path_out, 'vessels')
+    path_out_nerves = os.path.join(path_out, 'nerves')
+    fid.write('set path_out_cells "{0}"\n'.format(path_out_cells))
+    fid.write('set path_out_vessels "{0}"\n'.format(path_out_vessels))
+    fid.write('set path_out_nerves "{0}"\n'.format(path_out_nerves))
+
+    # Loop over all objects
     for iObj in range(mod.nObjects):
         obj = mod.Objects[iObj]
         name = obj.name.lower()
@@ -132,12 +175,19 @@ if __name__ == "__main__":
         print 'Name: {0}'.format(obj.name)
         print 'Color: {0}, {1}, {2}'.format(obj.red, obj.green, obj.blue)
 
-        if name == 'vessels':
-            print 'Type: Blood vessels'
+        # Detect blood vessel objects.
+        if name.startswith('vessels'):
+            if not os.path.isdir(path_out_vessels):
+                os.mkdir(path_out_vessels)
+            process_vessel(obj, path_out_vessels, fid)
 
-        if name.startswith('connective tissue'):
-            print 'Type: Connective tissue' 
+        # Detect nerve objects.
+        if name.startswith('nerve'):
+            if not os.path.isdir(path_out_nerves):
+                os.mkdir(path_out_nerves)
+            process_nerve(obj, path_out_nerves, fid)
 
+        # Detect cell objects (a.k.a. plasma membrane, or pm, objects).
         if name.endswith('pm'):
             if not os.path.isdir(path_out_cells):
                 os.mkdir(path_out_cells)
@@ -163,8 +213,6 @@ if __name__ == "__main__":
                 celltype = 'Pericyte'
             elif name.startswith('unknown'):
                 celltype = 'Unknown Cell'
-            elif 'fibroblast' in name:
-                celltype = 'Fibroblast'
             else:
                 celltype = ''
  

@@ -29,13 +29,29 @@ def usage(errstr):
     print ""
     exit(1)
 
-def preprocess_cell(obj, name, path_out_cells):
+def preprocess_cell(obj, path_out):
+    """
+    Runs preprocessing for a cell object. First, creates a temporary PyIMOD
+    ImodObject instance for the current object. Then, removes meshes from the
+    object and remeshes with a skip parameter of 10. Finally, exports the 
+    object to a VRML file.
+
+    Inputs
+    ------
+    obj:      PyIMOD ImodObject instance for the given cell.
+    path_out: Output path for storing cell data.
+
+    Returns
+    -------
+    fnameout: Filename of output VRML file, with output path prepended.
+    """
     # Process ImodObject name to be consistent
+    name = obj.name.lower()
     name = name.split('_')
     name = ' '.join(name)
     name = name.split()
     name = '_'.join(name)
-    fnameout = os.path.join(path_out_cells, name + '.wrl')
+    fnameout = os.path.join(path_out, name + '.wrl')
 
     # Create a new ImodModel with just the object to be processed
     modtmp = pyimod.ImodModel(mod)
@@ -51,6 +67,31 @@ def preprocess_cell(obj, name, path_out_cells):
     # Convert to VRML
     pyimod.ImodExport(modtmp, fnameout)
     return fnameout
+
+def process_cell(celltype, obj, path_out, fid):
+    """
+    Processes a cell object. First, performs preprocessing by remeshing and
+    exporting to the VRML format. Then, writes a line to the growing Amira
+    project file (.hx) to process the given cell object in Amira. Object color
+    is read from the IMOD object and supplied to Amira.
+
+    Inputs
+    ------
+    celltype: String specifying the type of cell. If this string is empty, the
+              cell is interpreted as being unrecognized, and a warning message
+              is printed and no further steps are made.
+    obj:      PyIMOD ImodObject object for the given cell.
+    path_out: Output path for storing cell data.
+    fid:      File ID of the growing .hx file to be appended to.
+    """
+    if celltype:
+        print 'Type: {0}'.format(celltype)
+        name = obj.name.lower()
+        fnamecell = preprocess_cell(obj, path_out)
+        fid.write('process_cell "{0}" "{1},{2},{3}" 0.7 $path_out_cells\n'.format(
+            fnamecell, obj.red, obj.green, obj.blue))
+    else:
+        print 'WARNING: UNRECOGNIZED CELL TYPE. SKIPPING.'
 
 if __name__ == "__main__":
     global mod
@@ -101,34 +142,32 @@ if __name__ == "__main__":
             if not os.path.isdir(path_out_cells):
                 os.mkdir(path_out_cells)
             if name.startswith('alpha'):
-                print 'Type: Alpha cell'
-                fnamecell = preprocess_cell(obj, name, path_out_cells)
-                fid.write('process_cell "{0}" "{1},{2},{3}" 0.7 $path_out_cells\n'.format(
-                    fnamecell, obj.red, obj.green, obj.blue))
+                celltype = 'Alpha cell'
             elif name.startswith('young_alpha'):
-                print 'Type: Young Alpha cell'
+                celltype = 'Young Alpha Cell'
             elif name.startswith('old_alpha'):
-                print 'Type: Old Alpha cell'
+                celltype = 'Old Alpha Cell'
             elif name.startswith('beta'):
-                print 'Type: Beta cell'
-                fnamecell = preprocess_cell(obj, name, path_out_cells)
-                fid.write('process_cell "{0}" "{1},{2},{3}" 0.7 $path_out_cells\n'.format(
-                    fnamecell, obj.red, obj.green, obj.blue))
+                celltype = 'Beta cell'
             elif name.startswith('young_beta'):
-                print 'Type: Young Beta cell'
+                celltype = 'Young Beta Cell'
             elif name.startswith('old_beta'):
-                print 'Type: Old Beta cell'
+                celltype = 'Old Beta Cell'
             elif name.startswith('delta'):
-                print 'Type: Delta cell'
+                celltype = 'Delta Cell'
             elif name.startswith('young_delta'):
-                print 'Type: Young Delta cell'
+                celltype = 'Young Delta Cell'
             elif name.startswith('old_delta'):
-                print 'Type: Old Delta cell'
+                celltype = 'Old Delta Cell'
             elif name.startswith('perycyte') or name.startswith('pericyte'):
-                print 'Type: Pericyte'
+                celltype = 'Pericyte'
             elif name.startswith('unknown'):
-                print 'Type: Unknown cell'
+                celltype = 'Unknown Cell'
             elif 'fibroblast' in name:
-                print 'Type: Fibroblast'
-        print '\n'
+                celltype = 'Fibroblast'
+            else:
+                celltype = ''
+ 
+            # Run cell processing
+            process_cell(celltype, obj, path_out_cells, fid)
     fid.close()

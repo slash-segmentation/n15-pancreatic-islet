@@ -161,7 +161,19 @@ proc isnan {x} {
 }
 
 proc process_cell {fname color trans path_out} {
-
+    # Performs processing for a cell type object. First, performs remeshing and
+    # smoothing and exports the file to disk as an Amira Mesh binary (.am).
+    # Then creates a Surface View module for displaying the processed surface.
+    #
+    # Input
+    # -----
+    # fname:    Filename of the .wrl or .am file to be loaded.
+    # color:    Desired color for the Surface View display, given as a comma-
+    #           separated R,G,B string. (e.g. "1,0,1").
+    # trans:    Transparency of the Surface View display, ranging from 0 to 1
+    #           where 0 is opaque.
+    # path_out: Output path to write Amira Mesh files to.
+    
     # Get basename of .wrl file.
     set base [get_base $fname]
 
@@ -185,6 +197,71 @@ proc process_cell {fname color trans path_out} {
     # Create surface view to display the smoothed surface.
     create_surface_view $base $trans $color
 }
+
+proc process_vessel {fname color trans path_out} {
+    # Performs processing for a vessel type object. First, performs remeshing and
+    # smoothing and exports the file to disk as an Amira Mesh binary (.am).
+    # Then creates a Surface View module for displaying the processed surface.
+    #
+    # Input
+    # -----
+    # fname:    Filename of the .wrl or .am file to be loaded.
+    # color:    Desired color for the Surface View display, given as a comma-
+    #           separated R,G,B string. (e.g. "1,0,1").
+    # trans:    Transparency of the Surface View display, ranging from 0 to 1
+    #           where 0 is opaque.
+    # path_out: Output path to write Amira Mesh files to.
+
+    # Get basename of .wrl file
+    set base [get_base $fname]
+
+    set amFile [glob -nocomplain [file join $path_out [appendn $base "*.am"]]]
+    if {[string length $amFile] != 0} {
+        [load $amFile] setLabel [appendn $base "-Geometry-Surface.smooth"]
+    } else {
+        load_vrml $fname $base
+        remesh_surface $base 1
+        smooth_surface $base 10 0.6
+        export_surface [appendn $base "-Geometry-Surface.smooth"] $path_out
+    }
+
+    # Create surface view to display the smoothed surface.
+    create_surface_view $base $trans $color
+}
+
+proc process_nerve {fname color trans path_out} {
+    # Performs processing for a nerve type object. First, performs remeshing and
+    # smoothing and exports the file to disk as an Amira Mesh binary (.am).
+    # Then creates a Surface View module for displaying the processed surface.
+    #
+    # Input
+    # -----
+    # fname:    Filename of the .wrl or .am file to be loaded.
+    # color:    Desired color for the Surface View display, given as a comma-
+    #           separated R,G,B string. (e.g. "1,0,1").
+    # trans:    Transparency of the Surface View display, ranging from 0 to 1
+    #            where 0 is opaque.
+    # path_out: Output path to write Amira Mesh files to.
+
+
+    # Get basename of .wrl file
+    set base [get_base $fname]
+
+    set amFile [glob -nocomplain [file join $path_out [appendn $base "*.am"]]]
+    if {[string length $amFile] != 0} {
+        [load $amFile] setLabel [appendn $base "-Geometry-Surface.smooth"]
+    } else {
+        load_vrml $fname $base
+        remesh_surface $base 1
+        smooth_surface $base 10 0.6
+        export_surface [appendn $base "-Geometry-Surface.smooth"] $path_out
+    }
+
+    # Create surface view to display the smoothed surface.
+    create_surface_view $base $trans $color
+}
+
+
 
 ###
 #####

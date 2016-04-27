@@ -85,21 +85,22 @@ proc smooth_surface {base val1 val2} {
     $module deselect
 }
 
-proc create_surface_view {base surfTrans surfColor} {
+proc create_surface_view {base ext surfTrans surfColor} {
     # Creates a Surface View module to display an Amira Geometry Surface. 
     # The surface view is set to constant color mode and vertex normals
     # for drawing style.
     #
     # Input
     # -----
-    # base: Basename of Geometry Surface module
+    # base:      Basename of Geometry Surface module
+    # ext:       Extension of Geometry Surface module
     # surfTrans: Transparency of surface
     # surfColor: Color or surface, given as a comma-separated R,G,B string.
     #            (e.g.: "1,0,0")
                 
     set module [appendn $base "-Surface-View"]
     create HxDisplaySurface $module
-    $module data connect [appendn $base "-Geometry-Surface.smooth"]
+    $module data connect [appendn $base "-Geometry-Surface" $ext]
     $module drawStyle setState 4 1 1 3 1 0 1
     $module fire
     $module baseTrans setValue $surfTrans
@@ -195,7 +196,7 @@ proc process_cell {fname color trans path_out} {
     }   
 
     # Create surface view to display the smoothed surface.
-    create_surface_view $base $trans $color
+    create_surface_view $base ".smooth" $trans $color
 }
 
 proc process_vessel {fname color trans path_out} {
@@ -215,18 +216,12 @@ proc process_vessel {fname color trans path_out} {
     # Get basename of .wrl file
     set base [get_base $fname]
 
-    set amFile [glob -nocomplain [file join $path_out [appendn $base "*.am"]]]
-    if {[string length $amFile] != 0} {
-        [load $amFile] setLabel [appendn $base "-Geometry-Surface.smooth"]
-    } else {
-        load_vrml $fname $base
-        remesh_surface $base 1
-        smooth_surface $base 10 0.6
-        export_surface [appendn $base "-Geometry-Surface.smooth"] $path_out
-    }
+    # Load the VRML file. For the current trace, remeshing and smoothing make
+    # Amira crash. The segmentation will need to be fixed before adding these.
+    load_vrml $fname $base
 
     # Create surface view to display the smoothed surface.
-    create_surface_view $base $trans $color
+    create_surface_view $base "" $trans $color
 }
 
 proc process_nerve {fname color trans path_out} {
@@ -252,13 +247,13 @@ proc process_nerve {fname color trans path_out} {
         [load $amFile] setLabel [appendn $base "-Geometry-Surface.smooth"]
     } else {
         load_vrml $fname $base
-        remesh_surface $base 1
+        remesh_surface $base 0.5
         smooth_surface $base 10 0.6
         export_surface [appendn $base "-Geometry-Surface.smooth"] $path_out
     }
 
     # Create surface view to display the smoothed surface.
-    create_surface_view $base $trans $color
+    create_surface_view $base ".smooth" $trans $color
 }
 
 
